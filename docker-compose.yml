@@ -1,0 +1,11 @@
+version: "3"
+services:
+  switch:
+    image: qnib/swarm-debug-switch
+    deploy:
+      mode: global
+      restart_policy:
+        condition: none 
+    pid: "host"
+    volumes:
+      - /etc/docker/:/etc/docker/
