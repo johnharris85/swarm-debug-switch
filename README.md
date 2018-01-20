@@ -10,11 +10,11 @@ Due to `docker service` not supporting some required functionality (`--privilege
         --restart-max-attempts=3 \
         --mode=global \
         --mount type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock \
-        --mount type=bind,source=/etc/docker/daemon.json,destination=/etc/docker/daemon.json \
+        --mount type=bind,source=/etc/docker,destination=/etc/docker \
         docker:18 \
             run \
             --rm \
-            -v /etc/docker/daemon.json:/etc/docker/daemon.json \
+            -v /etc/docker:/etc/docker \
             --privileged \
             --pid=host \
             johnharris85/swarm-debug-switch:0.1
