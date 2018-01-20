@@ -36,7 +36,20 @@ func getEnv(key, defaultVal string) string {
 func updateJson(configPath, debug string) error {
 	fileReader, err := os.Open(configPath)
 	if err != nil {
-		return err
+		if !os.IsNotExist(err) {
+			return err
+		}
+		dockerConfig := make(map[string]interface{})
+		dockerConfig["debug"] = true
+
+		fileWriter, err := os.Create(configPath)
+		if err != nil {
+			return err
+		}
+		defer fileWriter.Close()
+		json.NewEncoder(fileWriter).Encode(dockerConfig)
+
+		return nil
 	}
 
 	var debugBool bool
@@ -56,6 +69,7 @@ func updateJson(configPath, debug string) error {
 	if err != nil {
 		return err
 	}
+	defer fileWriter.Close()
 	json.NewEncoder(fileWriter).Encode(dockerConfig)
 
 	return nil
