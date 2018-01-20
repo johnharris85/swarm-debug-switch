@@ -1,11 +1,14 @@
 version: "3"
 services:
   switch:
-    image: qnib/swarm-debug-switch
+    image: docker:18
     deploy:
       mode: global
       restart_policy:
-        condition: none 
-    pid: "host"
+        condition: on-failure
+        max_attempts: 3 
     volumes:
       - /etc/docker/:/etc/docker/
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: run --rm  -v /etc/docker:/etc/docker --privileged  --pid=host johnharris85/swarm-debug-switch:0.1
+
