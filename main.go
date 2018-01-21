@@ -2,25 +2,26 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
-	"fmt"
 	"strconv"
-	"syscall"
 	"strings"
+	"syscall"
 )
 
 func main() {
 	dockerConfigPath := getEnv("DOCKER_CONFIG_PATH", "/etc/docker/daemon.json")
 	dockerDebugValue := getEnv("DOCKER_DEBUG_VALUE", "true")
 
-	if err := updateJson(dockerConfigPath, dockerDebugValue); err != nil {
-		fmt.Println(err)
+	if err := updateJSON(dockerConfigPath, dockerDebugValue); err != nil {
+		log.Println(err)
 		os.Exit(1)
 	}
 
 	if err := sighupDocker(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
@@ -33,23 +34,23 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
-func updateJson(configPath, debug string) error {
-	fileReader, err := os.Open(configPath)
+func updateJSON(configPath, debug string) error {
+	dockerConfig := make(map[string]interface{})
+	var configFileMissing bool
+
+	dockerConfigFromFile, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err
 		}
-		dockerConfig := make(map[string]interface{})
-		dockerConfig["debug"] = true
+		configFileMissing = true
+	}
 
-		fileWriter, err := os.Create(configPath)
+	if !configFileMissing {
+		err = json.Unmarshal(dockerConfigFromFile, &dockerConfig)
 		if err != nil {
 			return err
 		}
-		defer fileWriter.Close()
-		json.NewEncoder(fileWriter).Encode(dockerConfig)
-
-		return nil
 	}
 
 	var debugBool bool
@@ -59,18 +60,17 @@ func updateJson(configPath, debug string) error {
 	case "false":
 		debugBool = false
 	}
-
-	var dockerConfig map[string]interface{}
-	json.NewDecoder(fileReader).Decode(&dockerConfig)
-
 	dockerConfig["debug"] = debugBool
 
-	fileWriter, err := os.Create(configPath)
+	dockerConfigToFile, err := json.Marshal(dockerConfig)
 	if err != nil {
 		return err
 	}
-	defer fileWriter.Close()
-	json.NewEncoder(fileWriter).Encode(dockerConfig)
+
+	err = ioutil.WriteFile(configPath, dockerConfigToFile, 0644)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
