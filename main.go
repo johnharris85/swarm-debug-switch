@@ -53,14 +53,7 @@ func updateJSON(configPath, debug string) error {
 		}
 	}
 
-	var debugBool bool
-	switch strings.ToLower(debug) {
-	case "true":
-		debugBool = true
-	case "false":
-		debugBool = false
-	}
-	dockerConfig["debug"] = debugBool
+	dockerConfig["debug"] = strings.EqualFold(debug, "true")
 
 	dockerConfigToFile, err := json.Marshal(dockerConfig)
 	if err != nil {
